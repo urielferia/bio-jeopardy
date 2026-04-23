@@ -1,0 +1,4 @@
+# Añade aquí las dependencias de tu proyecto
+# Ejemplo:
+# numpy==1.26.4
+# pandas==2.2.1
