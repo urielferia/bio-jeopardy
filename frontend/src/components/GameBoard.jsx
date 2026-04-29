@@ -1,16 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import QuestionModal from './QuestionModal';
 import ScoreBoard from './ScoreBoard';
 
-const GameBoard = ({ config }) => {
+const GameBoard = ({ config, teams, lastMessage, sendMessage }) => {
   const [categories, setCategories] = useState(config.categories);
-  const [teams, setTeams] = useState(config.teams);
   const [activeQuestion, setActiveQuestion] = useState(null);
+
+  useEffect(() => {
+    if (lastMessage && lastMessage.type === 'OPEN_QUESTION') {
+      const { catIndex, qIndex } = lastMessage;
+      const question = categories[catIndex].questions[qIndex];
+      if (!question.isAnswered) {
+        setActiveQuestion({
+          ...question,
+          catIndex,
+          qIndex,
+          value: (qIndex + 1) * config.multiplier
+        });
+      }
+    }
+  }, [lastMessage, categories, config.multiplier]);
 
   const handleSquareClick = (catIndex, qIndex) => {
     const question = categories[catIndex].questions[qIndex];
     if (question.isAnswered) return;
 
+    // We can directly open it, and tell the server we opened it so mobile updates
+    sendMessage('SELECT_QUESTION', { catIndex, qIndex });
     setActiveQuestion({
       ...question,
       catIndex,
@@ -20,9 +36,11 @@ const GameBoard = ({ config }) => {
   };
 
   const handleAwardPoints = (teamId, points) => {
-    setTeams(teams.map(t => 
-      t.id === teamId ? { ...t, score: t.score + points } : t
-    ));
+    // We tell the server to update the score
+    const targetTeam = teams.find(t => t.id === teamId);
+    if (targetTeam) {
+      sendMessage('UPDATE_SCORE', { teamId, score: targetTeam.score + points });
+    }
     closeModalAndMarkAnswered();
   };
 
@@ -31,6 +49,7 @@ const GameBoard = ({ config }) => {
       const newCats = [...categories];
       newCats[activeQuestion.catIndex].questions[activeQuestion.qIndex].isAnswered = true;
       setCategories(newCats);
+      sendMessage('CLOSE_QUESTION', { catIndex: activeQuestion.catIndex, qIndex: activeQuestion.qIndex });
     }
     setActiveQuestion(null);
   };
@@ -41,7 +60,7 @@ const GameBoard = ({ config }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '1rem', overflow: 'hidden' }} className="animate-fade-in">
-      
+
       {/* Header */}
       <h1 style={{ textAlign: 'center', margin: '0.5rem 0 1.5rem 0', fontSize: '2.5rem', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '2px' }}>
         {config.gameTitle || 'Bio Jeopardy'}
@@ -51,7 +70,7 @@ const GameBoard = ({ config }) => {
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: `repeat(${categories.length}, minmax(0, 1fr))`, gap: '1rem', overflow: 'hidden', paddingBottom: '1rem' }}>
         {categories.map((cat, catIndex) => (
           <div key={cat.id} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%' }}>
-            
+
             {/* Category Header */}
             <div className="glass-panel" style={{ padding: '1.5rem 1rem', textAlign: 'center', background: 'var(--text-primary)', color: 'var(--bg-color)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80px' }}>
               <h2 style={{ fontSize: '1.2rem', margin: 0 }}>{cat.name}</h2>
@@ -61,14 +80,14 @@ const GameBoard = ({ config }) => {
             {cat.questions.map((q, qIndex) => {
               const points = (qIndex + 1) * config.multiplier;
               return (
-                <div 
+                <div
                   key={q.id}
                   className="glass-panel"
                   onClick={() => handleSquareClick(catIndex, qIndex)}
-                  style={{ 
-                    flex: 1, 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
                     justifyContent: 'center',
                     cursor: q.isAnswered ? 'default' : 'pointer',
                     opacity: q.isAnswered ? 0.2 : 1,
@@ -101,17 +120,19 @@ const GameBoard = ({ config }) => {
 
       {/* Score Board */}
       <div style={{ marginTop: 'auto' }}>
-        <ScoreBoard teams={teams} setTeams={setTeams} />
+        <ScoreBoard teams={teams} />
       </div>
 
       {/* Modal */}
       {activeQuestion && (
-        <QuestionModal 
+        <QuestionModal
           question={activeQuestion}
           teams={teams}
           timeLimit={config.timeLimit}
           onAwardPoints={handleAwardPoints}
           onClose={handleCloseWithoutPoints}
+          lastMessage={lastMessage}
+          sendMessage={sendMessage}
         />
       )}
     </div>

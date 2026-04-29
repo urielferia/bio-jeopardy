@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Plus, Trash2, Play } from 'lucide-react';
+import { Plus, Trash2, Play, XCircle } from 'lucide-react';
 
-const SetupScreen = ({ onStart }) => {
+const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
   const [gameTitle, setGameTitle] = useState('Bio Jeopardy');
-  const [teams, setTeams] = useState([{ id: 1, name: 'Team 1', score: 0 }, { id: 2, name: 'Team 2', score: 0 }]);
   const [timeLimit, setTimeLimit] = useState(30);
   const [multiplier, setMultiplier] = useState(100);
   
@@ -26,7 +25,6 @@ const SetupScreen = ({ onStart }) => {
   const handleStart = () => {
     onStart({
       gameTitle,
-      teams,
       timeLimit,
       multiplier,
       categories
@@ -106,32 +104,24 @@ const SetupScreen = ({ onStart }) => {
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
           <div>
-            <label>Teams</label>
-            {teams.map((team, idx) => (
-              <div key={team.id} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <input 
-                  value={team.name} 
-                  onChange={(e) => {
-                    const newTeams = [...teams];
-                    newTeams[idx].name = e.target.value;
-                    setTeams(newTeams);
-                  }}
-                />
-                <button 
-                  className="danger" 
-                  style={{ padding: '10px' }}
-                  onClick={() => setTeams(teams.filter((_, i) => i !== idx))}
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
-            <button 
-              onClick={() => setTeams([...teams, { id: Date.now(), name: `Team ${teams.length + 1}`, score: 0 }])}
-              style={{ marginTop: '0.5rem', width: '100%' }}
-            >
-              <Plus size={16} /> Add Team
-            </button>
+            <label>Connected Teams (Join on Mobile!)</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+              {connectedTeams.length === 0 ? (
+                <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.3)', borderRadius: '8px', textAlign: 'center', fontStyle: 'italic' }}>Waiting for teams to join...</div>
+              ) : (
+                connectedTeams.map((team) => (
+                  <div key={team.id} style={{ padding: '10px', background: 'var(--card-bg)', borderRadius: '8px', borderLeft: `6px solid ${team.color}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 'bold' }}>{team.name}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>Connected</span>
+                      <button onClick={() => onRemoveTeam(team.id)} style={{ background: 'transparent', padding: '2px', color: 'var(--danger)' }}>
+                        <XCircle size={20} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
           <div>

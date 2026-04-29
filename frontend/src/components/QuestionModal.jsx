@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { X, Clock, PlayCircle, PauseCircle, RotateCcw, Eye } from 'lucide-react';
 
-const QuestionModal = ({ question, teams, timeLimit, onAwardPoints, onClose }) => {
+const QuestionModal = ({ question, teams, timeLimit, onAwardPoints, onClose, lastMessage, sendMessage }) => {
   const [timeLeft, setTimeLeft] = useState(timeLimit);
-  const [isRunning, setIsRunning] = useState(false);
+  const [isRunning, setIsRunning] = useState(true);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [lockedTeam, setLockedTeam] = useState(null);
 
   useEffect(() => {
     let timer;
@@ -12,15 +13,28 @@ const QuestionModal = ({ question, teams, timeLimit, onAwardPoints, onClose }) =
       timer = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
-    } else if (timeLeft === 0) {
+    } else if (timeLeft === 0 && isRunning) {
       setIsRunning(false);
+      if (!lockedTeam) {
+        sendMessage('ENABLE_STEAL');
+      }
     }
     return () => clearInterval(timer);
-  }, [isRunning, timeLeft]);
+  }, [isRunning, timeLeft, sendMessage]);
+
+  useEffect(() => {
+    if (lastMessage && lastMessage.type === 'STEAL_SUCCESS') {
+      const stealingTeam = teams.find(t => t.id === lastMessage.teamId);
+      if (stealingTeam) {
+        setLockedTeam(stealingTeam);
+        setTimeLeft(Math.floor(timeLimit / 2));
+        setIsRunning(true);
+      }
+    }
+  }, [lastMessage, teams, timeLimit]);
 
   const handleSteal = () => {
-    // Steal pauses timer and resets it to full or half time. Let's just reset and pause.
-    setTimeLeft(timeLimit);
+    sendMessage('ENABLE_STEAL');
     setIsRunning(false);
   };
 
@@ -60,8 +74,9 @@ const QuestionModal = ({ question, teams, timeLimit, onAwardPoints, onClose }) =
             </button>
           </div>
           
-          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)' }}>
-            {question.value} Points
+          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+            <span>{question.value} Points</span>
+            {lockedTeam && <span style={{ fontSize: '1rem', color: lockedTeam.color, background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '4px', marginTop: '4px' }}>{lockedTeam.name} Stealing!</span>}
           </div>
 
           <button onClick={onClose} style={{ background: 'transparent', color: 'var(--text-primary)', padding: '8px' }}>
