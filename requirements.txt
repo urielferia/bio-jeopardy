@@ -1,4 +1,3 @@
-# Añade aquí las dependencias de tu proyecto
-# Ejemplo:
-# numpy==1.26.4
-# pandas==2.2.1
+fastapi==0.110.0
+uvicorn==0.29.0
+websockets==12.0
