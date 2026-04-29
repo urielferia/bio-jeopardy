@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Play, XCircle } from 'lucide-react';
+import { Plus, Trash2, Play, XCircle, Upload } from 'lucide-react';
 
 const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
   const [gameTitle, setGameTitle] = useState('Bio Jeopardy');
@@ -90,6 +90,56 @@ const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
     })));
   };
 
+  const handleCSVUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      const rows = text.split('\n').map(row => row.split(','));
+      
+      let data = rows.filter(row => row.length >= 3);
+      if (data.length > 0 && data[0][0].toLowerCase().includes('category')) {
+        data = data.slice(1);
+      }
+      
+      const newCatsMap = {};
+      data.forEach(row => {
+        const catName = row[0].trim();
+        const type = row[1] ? row[1].trim().toLowerCase() : 'text';
+        const qText = row[2] ? row[2].trim() : '';
+        const ansText = row[3] ? row[3].trim() : '';
+
+        if (!newCatsMap[catName]) {
+          newCatsMap[catName] = { id: `cat-${Date.now()}-${catName}`, name: catName, questions: [] };
+        }
+        
+        const qObj = {
+          id: `q-${Date.now()}-${Math.random()}`,
+          type: ['text', 'image', 'gif'].includes(type) ? type : 'text',
+          text: type === 'text' ? qText : '',
+          mediaUrl: type !== 'text' ? qText : '',
+          answer: ansText,
+          isAnswered: false
+        };
+        newCatsMap[catName].questions.push(qObj);
+      });
+      
+      const ObjectValues = Object.values(newCatsMap);
+      if (ObjectValues.length > 0) {
+        const maxQ = Math.max(...ObjectValues.map(c => c.questions.length));
+        ObjectValues.forEach(c => {
+          while (c.questions.length < maxQ) {
+            c.questions.push({ id: `q-${Date.now()}-${Math.random()}`, type: 'text', text: '', mediaUrl: '', answer: '', isAnswered: false });
+          }
+        });
+        setCategories(ObjectValues);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = null;
+  };
+
   return (
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }} className="animate-fade-in">
       <div className="glass-panel" style={{ padding: '2rem' }}>
@@ -148,7 +198,11 @@ const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
         <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h2>Board Configuration</h2>
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', background: 'var(--card-bg)', padding: '8px 16px', borderRadius: '4px', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', fontWeight: 'bold' }}>
+                <Upload size={16} /> Upload CSV
+                <input type="file" accept=".csv" onChange={handleCSVUpload} style={{ display: 'none' }} />
+              </label>
               <button onClick={addCategory}><Plus size={16} /> Add Column</button>
               <button onClick={addRow}><Plus size={16} /> Add Row</button>
               <button onClick={removeRow} className="warning"><Trash2 size={16} /> Remove Row</button>

@@ -115,7 +115,7 @@ const QuestionModal = ({ question, teams, timeLimit, onAwardPoints, onClose, las
               <button 
                 key={team.id} 
                 onClick={() => onAwardPoints(team.id, question.value)}
-                style={{ flex: '1 1 150px', maxWidth: '200px', fontSize: '1.2rem', padding: '15px' }}
+                style={{ flex: '1 1 150px', maxWidth: '200px', fontSize: '1.2rem', padding: '15px', background: team.color, color: '#ffffff', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
               >
                 {team.name}
               </button>
