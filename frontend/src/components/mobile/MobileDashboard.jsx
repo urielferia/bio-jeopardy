@@ -15,7 +15,12 @@ const MobileDashboard = ({ team, teams, config, activeQuestion, stealable, sendM
     }
   };
 
-  const myScore = teams.find(t => t.id === team.id)?.score || 0;
+  const myTeamData = teams.find(t => t.id === team.id);
+  const myScore = myTeamData?.score || 0;
+  
+  const handleActivateItem = (itemType, itemName) => {
+    sendMessage('ACTIVATE_ITEM', { itemType, itemName });
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-color)', overflow: 'hidden' }} className="animate-fade-in">
@@ -85,13 +90,44 @@ const MobileDashboard = ({ team, teams, config, activeQuestion, stealable, sendM
                         }}
                         disabled={isAnswered}
                       >
-                        {isAnswered ? '' : (qIndex + 1) * config.multiplier}
+                        {isAnswered ? '' : 10}
                       </button>
                     );
                   })}
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Items Section */}
+        {!activeQuestion && myTeamData && (
+          <div style={{ marginTop: '2rem', paddingBottom: '2rem' }}>
+            {isMyTurn ? (
+              <div>
+                <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: 'var(--accent)' }}>Your Wildcards</h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+                  {myTeamData.wildcards?.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>No wildcards left.</p>}
+                  {myTeamData.wildcards?.map(w => (
+                    <button key={w} onClick={() => handleActivateItem('wildcard', w)} style={{ padding: '10px 15px', background: 'var(--accent)', color: 'white', borderRadius: '8px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                      {w.replace('_', ' ')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: 'var(--danger)' }}>Your Traps</h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+                  {myTeamData.traps?.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>No traps left.</p>}
+                  {myTeamData.traps?.map(t => (
+                    <button key={t} onClick={() => handleActivateItem('trap', t)} style={{ padding: '10px 15px', background: 'var(--danger)', color: 'white', borderRadius: '8px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                      {t.replace('_', ' ')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

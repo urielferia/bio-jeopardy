@@ -23,6 +23,8 @@ class GameState:
         self.stealable = False
         self.config = None
         self.active_question_team_id = None
+        self.last_awarded_team_id = None
+        self.active_effects = [] # [{type: "wildcard"|"trap", name: string, team_id: string}]
         self.team_order = []
         self.current_turn_index = 0
         self.has_stolen = False
@@ -75,7 +77,9 @@ async def websocket_endpoint(websocket: WebSocket):
                     "id": team_id,
                     "name": msg.get("name"),
                     "color": msg.get("color"),
-                    "score": 0
+                    "score": 0,
+                    "wildcards": ["double_points", "double_chance", "steal", "shield", "clue"],
+                    "traps": ["half_time", "half_points", "minesweeper"]
                 }
                 await websocket.send_json({
                     "type": "TEAM_REGISTERED", 
@@ -105,6 +109,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 t_id = msg.get("teamId")
                 if t_id in state.teams:
                     state.teams[t_id]["score"] = msg.get("score")
+                    state.last_awarded_team_id = t_id
                     await broadcast({"type": "SYNC_TEAMS", "teams": list(state.teams.values())})
 
             elif type == "REMOVE_TEAM":
@@ -123,12 +128,46 @@ async def websocket_endpoint(websocket: WebSocket):
                             continue # Ignore, not their turn
                     
                     state.active_question_team_id = t_id
+                    state.last_awarded_team_id = None
                     # Tell the host to open this question
+                    q_value = 10
+                    
+                    # Apply active effects
+                    time_modifier = 1
+                    active_wildcards = [e for e in state.active_effects if e["type"] == "wildcard"]
+                    active_traps = [e for e in state.active_effects if e["type"] == "trap"]
+                    
+                    has_shield = any(w["name"] == "shield" for w in active_wildcards)
+                    
+                    if not has_shield:
+                        for trap in active_traps:
+                            if trap["name"] == "half_points":
+                                q_value = 5
+                            elif trap["name"] == "half_time":
+                                time_modifier = 0.5
+                            elif trap["name"] == "minesweeper":
+                                pass # handled when someone fails or score is updated, actually we can pass this flag to frontend
+
+                    double_chance = False
+                    clue = False
+                    for w in active_wildcards:
+                        if w["name"] == "double_points":
+                            q_value *= 2
+                        elif w["name"] == "double_chance":
+                            double_chance = True
+                        elif w["name"] == "clue":
+                            clue = True
+                            
                     if state.host_ws:
                         await state.host_ws.send_json({
                             "type": "OPEN_QUESTION",
                             "catIndex": msg.get("catIndex"),
-                            "qIndex": msg.get("qIndex")
+                            "qIndex": msg.get("qIndex"),
+                            "value": q_value,
+                            "timeModifier": time_modifier,
+                            "doubleChance": double_chance,
+                            "clue": clue,
+                            "activeEffects": state.active_effects
                         })
                     # Tell everyone it's opened so mobiles can hide the board
                     state.stealable = False
@@ -138,11 +177,40 @@ async def websocket_endpoint(websocket: WebSocket):
                         "qIndex": msg.get("qIndex")
                     })
 
+            elif type == "ACTIVATE_ITEM":
+                t_id = state.mobile_clients.get(websocket)
+                if not t_id or state.active_question_team_id is not None:
+                    continue # cannot activate if a question is already open
+                
+                if len(state.active_effects) > 0:
+                    continue # ONLY 1 TRAP OR WILDCARD PER TURN
+
+                item_type = msg.get("itemType") # "wildcard" or "trap"
+                item_name = msg.get("itemName")
+                
+                if item_name in state.teams[t_id].get(item_type + "s", []):
+                    # Remove from inventory
+                    state.teams[t_id][item_type + "s"].remove(item_name)
+                    # Add to active effects
+                    effect = {"type": item_type, "name": item_name, "team_id": t_id}
+                    state.active_effects.append(effect)
+                    await broadcast({"type": "SYNC_TEAMS", "teams": list(state.teams.values())})
+                    await broadcast({"type": "ITEM_ACTIVATED", "effect": effect})
+
             elif type == "ENABLE_STEAL":
                 # Host's timer ran out, steal is available
                 if not state.has_stolen:
-                    state.stealable = True
-                    await broadcast({"type": "STEAL_AVAILABLE", "excludeTeamId": state.active_question_team_id})
+                    # Check for active STEAL wildcard from any team
+                    stealer = next((e["team_id"] for e in state.active_effects if e["type"] == "wildcard" and e["name"] == "steal" and e["team_id"] != state.active_question_team_id), None)
+                    if stealer:
+                        state.stealable = False
+                        state.has_stolen = True
+                        state.active_effects = []
+                        await broadcast({"type": "EFFECTS_CLEARED"})
+                        await broadcast({"type": "STEAL_SUCCESS", "teamId": stealer})
+                    else:
+                        state.stealable = True
+                        await broadcast({"type": "STEAL_AVAILABLE", "excludeTeamId": state.active_question_team_id})
 
             elif type == "STEAL_PRESS":
                 # A team hit the steal button
@@ -150,6 +218,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 if state.stealable and pressing_team_id != state.active_question_team_id:
                     state.stealable = False # First one gets it, lock it
                     state.has_stolen = True
+                    state.active_effects = []
+                    await broadcast({"type": "EFFECTS_CLEARED"})
                     await broadcast({"type": "STEAL_SUCCESS", "teamId": pressing_team_id})
 
             elif type == "CLOSE_QUESTION":
@@ -157,6 +227,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 state.stealable = False
                 state.has_stolen = False
                 state.active_question_team_id = None
+                
+                state.active_effects = []
+                await broadcast({"type": "EFFECTS_CLEARED"})
                 
                 cat_idx = msg.get("catIndex")
                 q_idx = msg.get("qIndex")

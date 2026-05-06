@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { Plus, Trash2, Play, XCircle, Upload } from 'lucide-react';
 
 const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
-  const [gameTitle, setGameTitle] = useState('Bio Jeopardy');
+  const [gameTitle, setGameTitle] = useState('MATERIALES NATURALES');
   const [timeLimit, setTimeLimit] = useState(30);
-  const [multiplier, setMultiplier] = useState(100);
   
   // Default to 3 columns, 3 rows for a quick setup
   const [categories, setCategories] = useState(
@@ -26,7 +25,6 @@ const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
     onStart({
       gameTitle,
       timeLimit,
-      multiplier,
       categories
     });
   };
@@ -184,15 +182,6 @@ const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
             />
           </div>
 
-          <div>
-            <label>Points Multiplier (Row 1 = 1x, Row 2 = 2x)</label>
-            <input 
-              type="number" 
-              value={multiplier} 
-              onChange={(e) => setMultiplier(Number(e.target.value))} 
-              step="100" 
-            />
-          </div>
         </div>
 
         <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '2rem' }}>
@@ -223,7 +212,7 @@ const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
 
                 {cat.questions.map((q, qIndex) => (
                   <div key={q.id} style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.5)', borderRadius: '8px' }}>
-                    <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Row {qIndex + 1} ({(qIndex + 1) * multiplier} pts)</div>
+                    <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Row {qIndex + 1} (10 pts)</div>
                     <select 
                       value={q.type} 
                       onChange={(e) => updateQuestion(catIndex, qIndex, 'type', e.target.value)}

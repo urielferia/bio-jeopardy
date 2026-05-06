@@ -8,6 +8,7 @@ const HostApp = () => {
   const [gameState, setGameState] = useState('setup'); // 'setup' | 'playing'
   const [gameConfig, setGameConfig] = useState(null);
   const [teams, setTeams] = useState([]);
+  const [activeEffects, setActiveEffects] = useState([]);
 
   useEffect(() => {
     if (isConnected) {
@@ -20,6 +21,10 @@ const HostApp = () => {
 
     if (lastMessage.type === 'SYNC_TEAMS') {
       setTeams(lastMessage.teams);
+    } else if (lastMessage.type === 'ITEM_ACTIVATED') {
+      setActiveEffects(prev => [...prev, lastMessage.effect]);
+    } else if (lastMessage.type === 'EFFECTS_CLEARED') {
+      setActiveEffects([]);
     } else if (lastMessage.type === 'SELECT_QUESTION') {
       // Not needed if server broadcasts OPEN_QUESTION
     }
@@ -44,6 +49,7 @@ const HostApp = () => {
         <GameBoard 
           config={gameConfig} 
           teams={teams}
+          activeEffects={activeEffects}
           lastMessage={lastMessage} 
           sendMessage={sendMessage} 
         />

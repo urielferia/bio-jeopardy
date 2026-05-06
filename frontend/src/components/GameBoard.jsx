@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import QuestionModal from './QuestionModal';
 import ScoreBoard from './ScoreBoard';
 
-const GameBoard = ({ config, teams, lastMessage, sendMessage }) => {
+const GameBoard = ({ config, teams, activeEffects, lastMessage, sendMessage }) => {
   const [categories, setCategories] = useState(config.categories);
   const [activeQuestion, setActiveQuestion] = useState(null);
 
@@ -15,11 +15,28 @@ const GameBoard = ({ config, teams, lastMessage, sendMessage }) => {
           ...question,
           catIndex,
           qIndex,
-          value: (qIndex + 1) * config.multiplier
+          value: lastMessage.value || 10, // from server if modified by wildcards
+          timeModifier: lastMessage.timeModifier || 1,
+          doubleChance: lastMessage.doubleChance || false,
+          clue: lastMessage.clue || false,
+          activeEffects: lastMessage.activeEffects || []
         });
       }
     }
-  }, [lastMessage, categories, config.multiplier]);
+  }, [lastMessage, categories]);
+
+  useEffect(() => {
+    if (lastMessage && lastMessage.type === 'STEAL_SUCCESS' && activeQuestion) {
+      setActiveQuestion(prev => ({
+        ...prev,
+        value: 10,
+        timeModifier: 1,
+        doubleChance: false,
+        clue: false,
+        activeEffects: []
+      }));
+    }
+  }, [lastMessage, activeQuestion]);
 
   const handleSquareClick = (catIndex, qIndex) => {
     const question = categories[catIndex].questions[qIndex];
@@ -31,7 +48,7 @@ const GameBoard = ({ config, teams, lastMessage, sendMessage }) => {
       ...question,
       catIndex,
       qIndex,
-      value: (qIndex + 1) * config.multiplier
+      value: 10
     });
   };
 
@@ -62,9 +79,23 @@ const GameBoard = ({ config, teams, lastMessage, sendMessage }) => {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '1rem', overflow: 'hidden' }} className="animate-fade-in">
 
       {/* Header */}
-      <h1 style={{ textAlign: 'center', margin: '0.5rem 0 1.5rem 0', fontSize: '2.5rem', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '2px' }}>
-        {config.gameTitle || 'Bio Jeopardy'}
-      </h1>
+      <div style={{ textAlign: 'center', margin: '0.5rem 0 1.5rem 0' }}>
+        <h1 style={{ fontSize: '2.5rem', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '2px', margin: 0 }}>
+          {config.gameTitle || 'MATERIALES NATURALES'}
+        </h1>
+        {activeEffects && activeEffects.length > 0 && (
+          <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+            {activeEffects.map((effect, idx) => {
+              const team = teams.find(t => t.id === effect.team_id);
+              return (
+                <div key={idx} style={{ background: effect.type === 'trap' ? 'var(--danger)' : 'var(--accent)', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold' }}>
+                  {team ? team.name : 'Unknown Team'} activated {effect.name.replace('_', ' ').toUpperCase()}!
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Grid Container */}
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: `repeat(${categories.length}, minmax(0, 1fr))`, gap: '1rem', overflow: 'hidden', paddingBottom: '1rem' }}>
@@ -76,9 +107,8 @@ const GameBoard = ({ config, teams, lastMessage, sendMessage }) => {
               <h2 style={{ fontSize: '1.2rem', margin: 0 }}>{cat.name}</h2>
             </div>
 
-            {/* Question Squares */}
             {cat.questions.map((q, qIndex) => {
-              const points = (qIndex + 1) * config.multiplier;
+              const points = 10;
               return (
                 <div
                   key={q.id}

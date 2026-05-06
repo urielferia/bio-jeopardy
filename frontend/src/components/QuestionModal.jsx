@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { X, Clock, PlayCircle, PauseCircle, RotateCcw, Eye } from 'lucide-react';
 
 const QuestionModal = ({ question, teams, timeLimit, onAwardPoints, onClose, lastMessage, sendMessage }) => {
-  const [timeLeft, setTimeLeft] = useState(timeLimit);
+  const initialTime = Math.floor(timeLimit * (question.timeModifier || 1));
+  const [timeLeft, setTimeLeft] = useState(initialTime);
   const [isRunning, setIsRunning] = useState(true);
   const [showAnswer, setShowAnswer] = useState(false);
   const [lockedTeam, setLockedTeam] = useState(null);
@@ -56,8 +57,8 @@ const QuestionModal = ({ question, teams, timeLimit, onAwardPoints, onClose, las
       }}>
         
         {/* Header (Timer & Close) */}
-        <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <div className={isCritical ? 'timer-critical' : ''} style={{ fontSize: '2.5rem', fontWeight: '800', color: isCritical ? 'var(--danger)' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'monospace' }}>
               <Clock size={32} /> {timeLeft}s
             </div>
@@ -77,6 +78,8 @@ const QuestionModal = ({ question, teams, timeLimit, onAwardPoints, onClose, las
           <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             <span>{question.value} Points</span>
             {lockedTeam && <span style={{ fontSize: '1rem', color: lockedTeam.color, background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '4px', marginTop: '4px' }}>{lockedTeam.name} Stealing!</span>}
+            {question.doubleChance && <span style={{ fontSize: '1rem', color: 'var(--bg-color)', background: 'var(--warning)', padding: '4px 8px', borderRadius: '4px', marginTop: '4px' }}>DOUBLE CHANCE ACTIVE</span>}
+            {question.clue && <span style={{ fontSize: '1rem', color: 'var(--bg-color)', background: 'var(--accent)', padding: '4px 8px', borderRadius: '4px', marginTop: '4px' }}>CLUE: GIVE A CLUE</span>}
           </div>
 
           <button onClick={onClose} style={{ background: 'transparent', color: 'var(--text-primary)', padding: '8px' }}>
@@ -109,25 +112,49 @@ const QuestionModal = ({ question, teams, timeLimit, onAwardPoints, onClose, las
 
         {/* Action Footer */}
         <div style={{ padding: '1.5rem', borderTop: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)' }}>
-          <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Award Points To:</h3>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {teams.map(team => (
+          
+          {/* Correct Answer */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Correct Answer (Award Points):</h3>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {teams.map(team => (
+                <button 
+                  key={`correct-${team.id}`} 
+                  onClick={() => onAwardPoints(team.id, question.value)}
+                  style={{ flex: '1 1 150px', maxWidth: '200px', fontSize: '1.2rem', padding: '15px', background: team.color, color: '#ffffff', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
+                >
+                  {team.name}
+                </button>
+              ))}
               <button 
-                key={team.id} 
-                onClick={() => onAwardPoints(team.id, question.value)}
-                style={{ flex: '1 1 150px', maxWidth: '200px', fontSize: '1.2rem', padding: '15px', background: team.color, color: '#ffffff', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
+                onClick={() => onClose()}
+                className="danger"
+                style={{ flex: '1 1 150px', maxWidth: '200px', fontSize: '1.2rem', padding: '15px' }}
               >
-                {team.name}
+                Nobody (Close)
               </button>
-            ))}
-            <button 
-              onClick={() => onClose()}
-              className="danger"
-              style={{ flex: '1 1 150px', maxWidth: '200px', fontSize: '1.2rem', padding: '15px' }}
-            >
-              Nobody
-            </button>
+            </div>
           </div>
+
+          {/* Incorrect Answer */}
+          <div>
+            <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Incorrect Answer (-5 Points):</h3>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {teams.map(team => (
+                <button 
+                  key={`incorrect-${team.id}`} 
+                  onClick={() => {
+                    sendMessage('UPDATE_SCORE', { teamId: team.id, score: team.score - 5 });
+                  }}
+                  className="danger"
+                  style={{ flex: '1 1 150px', maxWidth: '200px', fontSize: '1.2rem', padding: '15px' }}
+                >
+                  {team.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
         </div>
 
       </div>
