@@ -12,21 +12,40 @@ const HostApp = () => {
 
   useEffect(() => {
     if (isConnected) {
-      sendMessage('REGISTER_HOST');
+      const isHost = localStorage.getItem('isHost');
+      if (isHost) {
+        sendMessage('RECONNECT_HOST');
+      } else {
+        localStorage.setItem('isHost', 'true');
+        sendMessage('REGISTER_HOST');
+      }
     }
   }, [isConnected, sendMessage]);
 
   useEffect(() => {
     if (!lastMessage) return;
 
-    if (lastMessage.type === 'SYNC_TEAMS') {
+    if (lastMessage.type === 'SYNC_STATE') {
+      setGameState(lastMessage.phase);
+      if (lastMessage.config) {
+        setGameConfig({
+          ...lastMessage.config,
+          teams: lastMessage.teams || []
+        });
+      }
+      setTeams(lastMessage.teams || []);
+      setActiveEffects(lastMessage.activeEffects || []);
+    } else if (lastMessage.type === 'SYNC_TEAMS') {
       setTeams(lastMessage.teams);
     } else if (lastMessage.type === 'ITEM_ACTIVATED') {
       setActiveEffects(prev => [...prev, lastMessage.effect]);
     } else if (lastMessage.type === 'EFFECTS_CLEARED') {
       setActiveEffects([]);
-    } else if (lastMessage.type === 'SELECT_QUESTION') {
-      // Not needed if server broadcasts OPEN_QUESTION
+    } else if (lastMessage.type === 'PHASE_CHANGED') {
+      setGameState(lastMessage.phase);
+      if (lastMessage.phase === 'setup') {
+        setGameConfig(null);
+      }
     }
   }, [lastMessage]);
 
@@ -53,6 +72,17 @@ const HostApp = () => {
           lastMessage={lastMessage} 
           sendMessage={sendMessage} 
         />
+      )}
+      {gameState === 'playing' && !gameConfig && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '1rem' }}>
+          <h2>Game is in progress, but configuration is missing.</h2>
+          <button 
+            onClick={() => sendMessage('RESET_GAME')}
+            style={{ padding: '10px 20px', background: 'var(--danger)', color: 'white', borderRadius: '8px', fontSize: '1.2rem', cursor: 'pointer' }}
+          >
+            Force Reset Game
+          </button>
+        </div>
       )}
     </div>
   );

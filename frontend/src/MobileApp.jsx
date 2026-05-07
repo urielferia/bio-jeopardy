@@ -15,11 +15,26 @@ const MobileApp = () => {
   const [currentTurnIndex, setCurrentTurnIndex] = useState(0);
 
   useEffect(() => {
+    if (isConnected) {
+      const savedTeamId = localStorage.getItem('teamId');
+      if (savedTeamId) {
+        sendMessage('RECONNECT_TEAM', { teamId: savedTeamId });
+      }
+    }
+  }, [isConnected, sendMessage]);
+
+  useEffect(() => {
     if (!lastMessage) return;
 
     switch (lastMessage.type) {
       case 'TEAM_REGISTERED':
+        localStorage.setItem('teamId', lastMessage.team_id);
         setTeamState(prev => ({ ...prev, id: lastMessage.team_id }));
+        setGameState(lastMessage.phase);
+        if (lastMessage.config) setGameConfig(lastMessage.config);
+        break;
+      case 'TEAM_RECONNECTED':
+        setTeamState({ id: lastMessage.team_id, name: lastMessage.name, color: lastMessage.color });
         setGameState(lastMessage.phase);
         if (lastMessage.config) setGameConfig(lastMessage.config);
         break;
@@ -71,7 +86,11 @@ const MobileApp = () => {
         setStealable(false); // Someone got it, hide button
         break;
       case 'ERROR':
-        alert(lastMessage.message);
+        if (lastMessage.message.includes("Team not found")) {
+          localStorage.removeItem('teamId');
+        } else {
+          alert(lastMessage.message);
+        }
         setTeamState(null);
         break;
       case 'PHASE_CHANGED':

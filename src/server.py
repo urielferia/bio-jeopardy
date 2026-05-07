@@ -66,6 +66,20 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Send current teams to host
                 await websocket.send_json({"type": "SYNC_TEAMS", "teams": list(state.teams.values())})
 
+            elif type == "RECONNECT_HOST":
+                client_type = "host"
+                state.host_ws = websocket
+                await websocket.send_json({"type": "HOST_REGISTERED"})
+                await websocket.send_json({
+                    "type": "SYNC_STATE",
+                    "phase": state.phase,
+                    "config": state.config,
+                    "teams": list(state.teams.values()),
+                    "activeEffects": state.active_effects,
+                    "teamOrder": state.team_order,
+                    "currentTurnIndex": state.current_turn_index
+                })
+
             elif type == "REGISTER_TEAM":
                 if state.phase == "playing":
                     await websocket.send_json({"type": "ERROR", "message": "Game already started. Cannot join."})
@@ -90,6 +104,23 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Broadcast new team list to host
                 await broadcast({"type": "SYNC_TEAMS", "teams": list(state.teams.values())})
 
+            elif type == "RECONNECT_TEAM":
+                t_id = msg.get("teamId")
+                if t_id in state.teams:
+                    client_type = "team"
+                    state.mobile_clients[websocket] = t_id
+                    await websocket.send_json({
+                        "type": "TEAM_RECONNECTED",
+                        "team_id": t_id,
+                        "name": state.teams[t_id]["name"],
+                        "color": state.teams[t_id]["color"],
+                        "phase": state.phase,
+                        "config": state.config
+                    })
+                    await broadcast({"type": "SYNC_TEAMS", "teams": list(state.teams.values())})
+                else:
+                    await websocket.send_json({"type": "ERROR", "message": "Team not found. Please rejoin."})
+
             elif type == "START_GAME":
                 # Host starts the game
                 state.phase = "playing"
@@ -103,6 +134,27 @@ async def websocket_endpoint(websocket: WebSocket):
                     "teamOrder": state.team_order,
                     "currentTurnIndex": state.current_turn_index
                 })
+
+            elif type == "RESET_GAME":
+                # Host ends/resets the game
+                state.phase = "setup"
+                state.config = None
+                state.active_question_team_id = None
+                state.last_awarded_team_id = None
+                state.active_effects = []
+                state.team_order = []
+                state.current_turn_index = 0
+                state.has_stolen = False
+                state.stealable = False
+                
+                # Reset team scores and items
+                for t in state.teams.values():
+                    t["score"] = 0
+                    t["wildcards"] = ["double_points", "double_chance", "steal", "shield", "clue"]
+                    t["traps"] = ["half_time", "half_points", "minesweeper"]
+                    
+                await broadcast({"type": "PHASE_CHANGED", "phase": "setup"})
+                await broadcast({"type": "SYNC_TEAMS", "teams": list(state.teams.values())})
 
             elif type == "UPDATE_SCORE":
                 # Host updates a team's score
@@ -248,7 +300,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
     except WebSocketDisconnect:
         if client_type == "host":
-            state.host_ws = None
+            if state.host_ws == websocket:
+                state.host_ws = None
         elif client_type == "team":
             if websocket in state.mobile_clients:
                 del state.mobile_clients[websocket]

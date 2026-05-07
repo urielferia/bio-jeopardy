@@ -71,7 +71,7 @@ const MobileDashboard = ({ team, teams, config, activeQuestion, stealable, sendM
             }}>
               {config.categories.map((cat, catIndex) => (
                 <div key={cat.id} style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <div style={{ background: 'var(--text-primary)', color: 'white', padding: '8px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '4px', minHeight: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ background: 'darkgreen', color: 'white', padding: '8px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '4px', minHeight: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {cat.name}
                   </div>
                   {cat.questions.map((q, qIndex) => {
@@ -107,8 +107,8 @@ const MobileDashboard = ({ team, teams, config, activeQuestion, stealable, sendM
               <div>
                 <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: 'var(--accent)' }}>Your Wildcards</h3>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
-                  {myTeamData.wildcards?.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>No wildcards left.</p>}
-                  {myTeamData.wildcards?.map(w => (
+                  {myTeamData.wildcards?.filter(w => w !== 'steal').length === 0 && <p style={{ color: 'var(--text-secondary)' }}>No wildcards left.</p>}
+                  {myTeamData.wildcards?.filter(w => w !== 'steal').map(w => (
                     <button key={w} onClick={() => handleActivateItem('wildcard', w)} style={{ padding: '10px 15px', background: 'var(--accent)', color: 'white', borderRadius: '8px', fontWeight: 'bold', textTransform: 'uppercase' }}>
                       {w.replace('_', ' ')}
                     </button>
@@ -117,14 +117,19 @@ const MobileDashboard = ({ team, teams, config, activeQuestion, stealable, sendM
               </div>
             ) : (
               <div>
-                <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: 'var(--danger)' }}>Your Traps</h3>
+                <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: 'var(--danger)' }}>Your Traps & Steal</h3>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
-                  {myTeamData.traps?.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>No traps left.</p>}
+                  {myTeamData.traps?.length === 0 && !myTeamData.wildcards?.includes('steal') && <p style={{ color: 'var(--text-secondary)' }}>No traps or steal left.</p>}
                   {myTeamData.traps?.map(t => (
                     <button key={t} onClick={() => handleActivateItem('trap', t)} style={{ padding: '10px 15px', background: 'var(--danger)', color: 'white', borderRadius: '8px', fontWeight: 'bold', textTransform: 'uppercase' }}>
                       {t.replace('_', ' ')}
                     </button>
                   ))}
+                  {myTeamData.wildcards?.includes('steal') && (
+                    <button key="steal" onClick={() => handleActivateItem('wildcard', 'steal')} style={{ padding: '10px 15px', background: 'var(--accent)', color: 'white', borderRadius: '8px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                      STEAL
+                    </button>
+                  )}
                 </div>
               </div>
             )}

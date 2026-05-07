@@ -80,6 +80,14 @@ const QuestionModal = ({ question, teams, timeLimit, onAwardPoints, onClose, las
             {lockedTeam && <span style={{ fontSize: '1rem', color: lockedTeam.color, background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '4px', marginTop: '4px' }}>{lockedTeam.name} Stealing!</span>}
             {question.doubleChance && <span style={{ fontSize: '1rem', color: 'var(--bg-color)', background: 'var(--warning)', padding: '4px 8px', borderRadius: '4px', marginTop: '4px' }}>DOUBLE CHANCE ACTIVE</span>}
             {question.clue && <span style={{ fontSize: '1rem', color: 'var(--bg-color)', background: 'var(--accent)', padding: '4px 8px', borderRadius: '4px', marginTop: '4px' }}>CLUE: GIVE A CLUE</span>}
+            {question.activeEffects && question.activeEffects.map((effect, idx) => {
+              const team = teams.find(t => t.id === effect.team_id);
+              return (
+                <span key={idx} style={{ fontSize: '1rem', color: '#ffffff', background: effect.type === 'trap' ? 'var(--danger)' : 'var(--accent)', padding: '4px 8px', borderRadius: '4px', marginTop: '4px', textTransform: 'uppercase' }}>
+                  {team ? team.name : 'Team'} USED: {effect.name.replace('_', ' ')}
+                </span>
+              );
+            })}
           </div>
 
           <button onClick={onClose} style={{ background: 'transparent', color: 'var(--text-primary)', padding: '8px' }}>

@@ -5,6 +5,19 @@ import ScoreBoard from './ScoreBoard';
 const GameBoard = ({ config, teams, activeEffects, lastMessage, sendMessage }) => {
   const [categories, setCategories] = useState(config.categories);
   const [activeQuestion, setActiveQuestion] = useState(null);
+  const [currentTurnIndex, setCurrentTurnIndex] = useState(0);
+  const [teamOrder, setTeamOrder] = useState([]);
+
+  useEffect(() => {
+    if (lastMessage) {
+      if (lastMessage.type === 'GAME_STARTED') {
+        setTeamOrder(lastMessage.teamOrder || []);
+        setCurrentTurnIndex(lastMessage.currentTurnIndex || 0);
+      } else if (lastMessage.type === 'QUESTION_CLOSED') {
+        setCurrentTurnIndex(lastMessage.currentTurnIndex || 0);
+      }
+    }
+  }, [lastMessage]);
 
   useEffect(() => {
     if (lastMessage && lastMessage.type === 'OPEN_QUESTION') {
@@ -26,17 +39,23 @@ const GameBoard = ({ config, teams, activeEffects, lastMessage, sendMessage }) =
   }, [lastMessage, categories]);
 
   useEffect(() => {
-    if (lastMessage && lastMessage.type === 'STEAL_SUCCESS' && activeQuestion) {
-      setActiveQuestion(prev => ({
-        ...prev,
-        value: 10,
-        timeModifier: 1,
-        doubleChance: false,
-        clue: false,
-        activeEffects: []
-      }));
+    if (lastMessage && lastMessage.type === 'STEAL_SUCCESS') {
+      setActiveQuestion(prev => {
+        if (!prev) return prev;
+        if (prev.value === 10 && prev.timeModifier === 1 && prev.doubleChance === false && prev.clue === false && prev.activeEffects.length === 0) {
+          return prev;
+        }
+        return {
+          ...prev,
+          value: 10,
+          timeModifier: 1,
+          doubleChance: false,
+          clue: false,
+          activeEffects: []
+        };
+      });
     }
-  }, [lastMessage, activeQuestion]);
+  }, [lastMessage]);
 
   const handleSquareClick = (catIndex, qIndex) => {
     const question = categories[catIndex].questions[qIndex];
@@ -77,12 +96,28 @@ const GameBoard = ({ config, teams, activeEffects, lastMessage, sendMessage }) =
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '1rem', overflow: 'hidden' }} className="animate-fade-in">
-
       {/* Header */}
       <div style={{ textAlign: 'center', margin: '0.5rem 0 1.5rem 0' }}>
         <h1 style={{ fontSize: '2.5rem', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '2px', margin: 0 }}>
           {config.gameTitle || 'MATERIALES NATURALES'}
         </h1>
+        <button 
+          onClick={() => {
+            if (window.confirm("Are you sure you want to end this game and return to the lobby?")) {
+              sendMessage('RESET_GAME');
+            }
+          }}
+          style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '8px 16px', background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          End Game
+        </button>
+        {teamOrder.length > 0 && (
+          <div style={{ marginTop: '0.5rem', fontSize: '1.5rem', fontWeight: 'bold' }}>
+            Current Turn: <span style={{ color: teams.find(t => t.id === teamOrder[currentTurnIndex])?.color || 'var(--text-primary)' }}>
+              {teams.find(t => t.id === teamOrder[currentTurnIndex])?.name || 'Unknown'}
+            </span>
+          </div>
+        )}
         {activeEffects && activeEffects.length > 0 && (
           <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
             {activeEffects.map((effect, idx) => {
@@ -150,7 +185,7 @@ const GameBoard = ({ config, teams, activeEffects, lastMessage, sendMessage }) =
 
       {/* Score Board */}
       <div style={{ marginTop: 'auto' }}>
-        <ScoreBoard teams={teams} />
+        <ScoreBoard teams={teams} sendMessage={sendMessage} />
       </div>
 
       {/* Modal */}
