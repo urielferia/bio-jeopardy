@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Clock, PlayCircle, PauseCircle, RotateCcw, Eye } from 'lucide-react';
 
-const QuestionModal = ({ question, teams, timeLimit, onAwardPoints, onClose, lastMessage, sendMessage }) => {
+const QuestionModal = ({ question, teams, currentTeam, timeLimit, onAwardPoints, onClose, lastMessage, sendMessage }) => {
   const initialTime = Math.floor(timeLimit * (question.timeModifier || 1));
   const [timeLeft, setTimeLeft] = useState(initialTime);
   const [isRunning, setIsRunning] = useState(true);
@@ -77,6 +77,7 @@ const QuestionModal = ({ question, teams, timeLimit, onAwardPoints, onClose, las
           
           <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             <span>{question.value} Points</span>
+            {currentTeam && !lockedTeam && <span style={{ fontSize: '1rem', color: currentTeam.color, background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '4px', marginTop: '4px' }}>Turn: {currentTeam.name}</span>}
             {lockedTeam && <span style={{ fontSize: '1rem', color: lockedTeam.color, background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '4px', marginTop: '4px' }}>{lockedTeam.name} Stealing!</span>}
             {question.doubleChance && <span style={{ fontSize: '1rem', color: 'var(--bg-color)', background: 'var(--warning)', padding: '4px 8px', borderRadius: '4px', marginTop: '4px' }}>DOUBLE CHANCE ACTIVE</span>}
             {question.clue && <span style={{ fontSize: '1rem', color: 'var(--bg-color)', background: 'var(--accent)', padding: '4px 8px', borderRadius: '4px', marginTop: '4px' }}>CLUE: GIVE A CLUE</span>}

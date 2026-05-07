@@ -45,6 +45,7 @@ const HostApp = () => {
       setGameState(lastMessage.phase);
       if (lastMessage.phase === 'setup') {
         setGameConfig(null);
+        setActiveEffects([]);
       }
     }
   }, [lastMessage]);

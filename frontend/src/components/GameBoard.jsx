@@ -193,6 +193,7 @@ const GameBoard = ({ config, teams, activeEffects, lastMessage, sendMessage }) =
         <QuestionModal
           question={activeQuestion}
           teams={teams}
+          currentTeam={teams.find(t => t.id === teamOrder[currentTurnIndex])}
           timeLimit={config.timeLimit}
           onAwardPoints={handleAwardPoints}
           onClose={handleCloseWithoutPoints}
