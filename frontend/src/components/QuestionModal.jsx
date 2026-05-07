@@ -111,6 +111,19 @@ const QuestionModal = ({ question, teams, currentTeam, timeLimit, onAwardPoints,
             />
           )}
 
+          {question.options && question.options.some(opt => opt && opt.trim() !== '') && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', width: '100%', maxWidth: '800px', marginBottom: '2rem' }}>
+              {question.options.map((opt, i) => {
+                if (!opt || !opt.trim()) return null;
+                return (
+                  <div key={i} className="glass-panel" style={{ padding: '1.5rem', fontSize: '1.5rem', textAlign: 'center', background: 'rgba(255,255,255,0.1)', border: '2px solid var(--glass-border)' }}>
+                    <strong style={{ color: 'var(--accent)', marginRight: '10px' }}>{String.fromCharCode(65 + i)}.</strong> {opt}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {showAnswer && question.answer && (
             <div className="animate-fade-in" style={{ marginTop: 'auto', background: 'rgba(34, 197, 94, 0.1)', border: '2px solid var(--accent)', padding: '1.5rem', borderRadius: '12px', width: '100%', textAlign: 'center' }}>
               <h3 style={{ color: 'var(--accent)', marginBottom: '0.5rem', margin: 0 }}>Answer:</h3>

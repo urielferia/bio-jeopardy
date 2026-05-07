@@ -16,6 +16,7 @@ const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
         answer: '',
         type: 'text', // text, image, gif
         mediaUrl: '',
+        options: ['', '', '', ''],
         isAnswered: false,
       }))
     }))
@@ -54,6 +55,7 @@ const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
           answer: '',
           type: 'text',
           mediaUrl: '',
+          options: ['', '', '', ''],
           isAnswered: false,
         }))
       }
@@ -75,6 +77,7 @@ const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
           answer: '',
           type: 'text',
           mediaUrl: '',
+          options: ['', '', '', ''],
           isAnswered: false,
         }
       ]
@@ -107,6 +110,12 @@ const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
         const type = row[1] ? row[1].trim().toLowerCase() : 'text';
         const qText = row[2] ? row[2].trim() : '';
         const ansText = row[3] ? row[3].trim() : '';
+        const options = [
+          row[4] ? row[4].trim() : '',
+          row[5] ? row[5].trim() : '',
+          row[6] ? row[6].trim() : '',
+          row[7] ? row[7].trim() : ''
+        ];
 
         if (!newCatsMap[catName]) {
           newCatsMap[catName] = { id: `cat-${Date.now()}-${catName}`, name: catName, questions: [] };
@@ -118,6 +127,7 @@ const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
           text: type === 'text' ? qText : '',
           mediaUrl: type !== 'text' ? qText : '',
           answer: ansText,
+          options: options,
           isAnswered: false
         };
         newCatsMap[catName].questions.push(qObj);
@@ -128,7 +138,7 @@ const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
         const maxQ = Math.max(...ObjectValues.map(c => c.questions.length));
         ObjectValues.forEach(c => {
           while (c.questions.length < maxQ) {
-            c.questions.push({ id: `q-${Date.now()}-${Math.random()}`, type: 'text', text: '', mediaUrl: '', answer: '', isAnswered: false });
+            c.questions.push({ id: `q-${Date.now()}-${Math.random()}`, type: 'text', text: '', mediaUrl: '', answer: '', options: ['', '', '', ''], isAnswered: false });
           }
         });
         setCategories(ObjectValues);
@@ -236,6 +246,25 @@ const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
                       placeholder="Enter answer (optional)..."
                       style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--glass-border)', minHeight: '40px', fontFamily: 'inherit', marginBottom: '0.5rem' }}
                     />
+
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <div style={{ fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '0.2rem', color: 'var(--text-secondary)' }}>Multiple Choice Options (Optional)</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                        {[0, 1, 2, 3].map(optIndex => (
+                          <input 
+                            key={optIndex}
+                            placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
+                            value={q.options ? q.options[optIndex] || '' : ''}
+                            onChange={(e) => {
+                              const newOpts = q.options ? [...q.options] : ['', '', '', ''];
+                              newOpts[optIndex] = e.target.value;
+                              updateQuestion(catIndex, qIndex, 'options', newOpts);
+                            }}
+                            style={{ padding: '6px', fontSize: '0.9rem', borderRadius: '4px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.7)', color: '#000' }}
+                          />
+                        ))}
+                      </div>
+                    </div>
 
                     {(q.type === 'image' || q.type === 'gif') && (
                       <input 
