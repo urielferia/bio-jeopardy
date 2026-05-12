@@ -7,6 +7,31 @@ const QuestionModal = ({ question, teams, currentTeam, timeLimit, onAwardPoints,
   const [isRunning, setIsRunning] = useState(true);
   const [showAnswer, setShowAnswer] = useState(false);
   const [lockedTeam, setLockedTeam] = useState(null);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+
+  const handleCorrectAnswer = (teamId) => {
+    if (isEvaluating) return;
+    setIsEvaluating(true);
+    setShowAnswer(true);
+    setIsRunning(false);
+    setTimeout(() => {
+      onAwardPoints(teamId, question.value);
+    }, 4000);
+  };
+
+  const handleIncorrectAnswer = () => {
+    if (isEvaluating) return;
+    if (lockedTeam) {
+      setIsEvaluating(true);
+      setShowAnswer(true);
+      setIsRunning(false);
+      setTimeout(() => {
+        onClose();
+      }, 4000);
+    } else {
+      sendMessage('ENABLE_STEAL');
+    }
+  };
 
   useEffect(() => {
     let timer;
@@ -34,19 +59,15 @@ const QuestionModal = ({ question, teams, currentTeam, timeLimit, onAwardPoints,
     } else if (lastMessage && lastMessage.type === 'ANSWER_CORRECT') {
       const targetTeam = lockedTeam || currentTeam;
       if (targetTeam && lastMessage.teamId === targetTeam.id) {
-        onAwardPoints(targetTeam.id, question.value);
+        handleCorrectAnswer(targetTeam.id);
       }
     } else if (lastMessage && lastMessage.type === 'ANSWER_INCORRECT') {
       const targetTeam = lockedTeam || currentTeam;
       if (targetTeam && lastMessage.teamId === targetTeam.id) {
-        if (lockedTeam) {
-          onClose();
-        } else {
-          sendMessage('ENABLE_STEAL');
-        }
+        handleIncorrectAnswer();
       }
     }
-  }, [lastMessage, teams, timeLimit, currentTeam, lockedTeam, question.value, onAwardPoints, onClose, sendMessage]);
+  }, [lastMessage, teams, timeLimit, currentTeam, lockedTeam, question.value, onAwardPoints, onClose, sendMessage, isEvaluating]);
 
   const handleSteal = () => {
     sendMessage('ENABLE_STEAL');
@@ -150,30 +171,29 @@ const QuestionModal = ({ question, teams, currentTeam, timeLimit, onAwardPoints,
         <div style={{ padding: '1.5rem', borderTop: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)' }}>
           <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button 
+              disabled={isEvaluating}
               onClick={() => {
                 const targetTeam = lockedTeam || currentTeam;
-                if (targetTeam) onAwardPoints(targetTeam.id, question.value);
+                if (targetTeam) handleCorrectAnswer(targetTeam.id);
               }}
-              style={{ flex: '1 1 200px', maxWidth: '300px', fontSize: '1.5rem', padding: '20px', background: 'var(--accent)', color: '#ffffff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              style={{ flex: '1 1 200px', maxWidth: '300px', fontSize: '1.5rem', padding: '20px', background: 'var(--accent)', color: '#ffffff', border: 'none', borderRadius: '8px', cursor: isEvaluating ? 'not-allowed' : 'pointer', fontWeight: 'bold', opacity: isEvaluating ? 0.5 : 1 }}
             >
               ✔️ Correct
             </button>
             <button 
+              disabled={isEvaluating}
               onClick={() => {
-                if (lockedTeam) {
-                  onClose();
-                } else {
-                  sendMessage('ENABLE_STEAL');
-                }
+                handleIncorrectAnswer();
               }}
               className="danger"
-              style={{ flex: '1 1 200px', maxWidth: '300px', fontSize: '1.5rem', padding: '20px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              style={{ flex: '1 1 200px', maxWidth: '300px', fontSize: '1.5rem', padding: '20px', border: 'none', borderRadius: '8px', cursor: isEvaluating ? 'not-allowed' : 'pointer', fontWeight: 'bold', opacity: isEvaluating ? 0.5 : 1 }}
             >
               ✖️ Incorrect
             </button>
             <button 
+              disabled={isEvaluating}
               onClick={() => onClose()}
-              style={{ flex: '1 1 200px', maxWidth: '300px', fontSize: '1.5rem', padding: '20px', background: 'var(--text-secondary)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              style={{ flex: '1 1 200px', maxWidth: '300px', fontSize: '1.5rem', padding: '20px', background: 'var(--text-secondary)', color: 'white', border: 'none', borderRadius: '8px', cursor: isEvaluating ? 'not-allowed' : 'pointer', fontWeight: 'bold', opacity: isEvaluating ? 0.5 : 1 }}
             >
               Skip (Nobody)
             </button>
