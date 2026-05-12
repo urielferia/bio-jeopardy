@@ -51,7 +51,7 @@ const QuestionModal = ({ question, teams, currentTeam, timeLimit, onAwardPoints,
     }} className="animate-fade-in">
       
       <div className="glass-panel" style={{
-        width: '100%', maxWidth: '900px', height: '90%', maxHeight: '800px',
+        width: '100%', maxWidth: '1200px', height: '95%', maxHeight: '95vh',
         display: 'flex', flexDirection: 'column', background: 'var(--modal-bg)',
         overflow: 'hidden'
       }}>
@@ -134,49 +134,36 @@ const QuestionModal = ({ question, teams, currentTeam, timeLimit, onAwardPoints,
 
         {/* Action Footer */}
         <div style={{ padding: '1.5rem', borderTop: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)' }}>
-          
-          {/* Correct Answer */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Correct Answer (Award Points):</h3>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {teams.map(team => (
-                <button 
-                  key={`correct-${team.id}`} 
-                  onClick={() => onAwardPoints(team.id, question.value)}
-                  style={{ flex: '1 1 150px', maxWidth: '200px', fontSize: '1.2rem', padding: '15px', background: team.color, color: '#ffffff', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
-                >
-                  {team.name}
-                </button>
-              ))}
-              <button 
-                onClick={() => onClose()}
-                className="danger"
-                style={{ flex: '1 1 150px', maxWidth: '200px', fontSize: '1.2rem', padding: '15px' }}
-              >
-                Nobody (Close)
-              </button>
-            </div>
+          <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button 
+              onClick={() => {
+                const targetTeam = lockedTeam || currentTeam;
+                if (targetTeam) onAwardPoints(targetTeam.id, question.value);
+              }}
+              style={{ flex: '1 1 200px', maxWidth: '300px', fontSize: '1.5rem', padding: '20px', background: 'var(--accent)', color: '#ffffff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              ✔️ Correct
+            </button>
+            <button 
+              onClick={() => {
+                if (lockedTeam) {
+                  onClose();
+                } else {
+                  sendMessage('ENABLE_STEAL');
+                }
+              }}
+              className="danger"
+              style={{ flex: '1 1 200px', maxWidth: '300px', fontSize: '1.5rem', padding: '20px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              ✖️ Incorrect
+            </button>
+            <button 
+              onClick={() => onClose()}
+              style={{ flex: '1 1 200px', maxWidth: '300px', fontSize: '1.5rem', padding: '20px', background: 'var(--text-secondary)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              Skip (Nobody)
+            </button>
           </div>
-
-          {/* Incorrect Answer */}
-          <div>
-            <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Incorrect Answer (-5 Points):</h3>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {teams.map(team => (
-                <button 
-                  key={`incorrect-${team.id}`} 
-                  onClick={() => {
-                    sendMessage('UPDATE_SCORE', { teamId: team.id, score: team.score - 5 });
-                  }}
-                  className="danger"
-                  style={{ flex: '1 1 150px', maxWidth: '200px', fontSize: '1.2rem', padding: '15px' }}
-                >
-                  {team.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
         </div>
 
       </div>

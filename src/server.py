@@ -93,7 +93,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     "color": msg.get("color"),
                     "score": 0,
                     "wildcards": ["double_points", "double_chance", "steal", "shield", "clue"],
-                    "traps": ["half_time", "half_points", "minesweeper"]
+                    "traps": ["half_time", "half_points"]
                 }
                 await websocket.send_json({
                     "type": "TEAM_REGISTERED", 
@@ -151,7 +151,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 for t in state.teams.values():
                     t["score"] = 0
                     t["wildcards"] = ["double_points", "double_chance", "steal", "shield", "clue"]
-                    t["traps"] = ["half_time", "half_points", "minesweeper"]
+                    t["traps"] = ["half_time", "half_points"]
                     
                 await broadcast({"type": "PHASE_CHANGED", "phase": "setup"})
                 await broadcast({"type": "SYNC_TEAMS", "teams": list(state.teams.values())})
@@ -197,8 +197,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                 q_value = 5
                             elif trap["name"] == "half_time":
                                 time_modifier = 0.5
-                            elif trap["name"] == "minesweeper":
-                                pass # handled when someone fails or score is updated, actually we can pass this flag to frontend
+                            pass
 
                     double_chance = False
                     clue = False
