@@ -31,8 +31,22 @@ const QuestionModal = ({ question, teams, currentTeam, timeLimit, onAwardPoints,
         setTimeLeft(Math.floor(timeLimit / 2));
         setIsRunning(true);
       }
+    } else if (lastMessage && lastMessage.type === 'ANSWER_CORRECT') {
+      const targetTeam = lockedTeam || currentTeam;
+      if (targetTeam && lastMessage.teamId === targetTeam.id) {
+        onAwardPoints(targetTeam.id, question.value);
+      }
+    } else if (lastMessage && lastMessage.type === 'ANSWER_INCORRECT') {
+      const targetTeam = lockedTeam || currentTeam;
+      if (targetTeam && lastMessage.teamId === targetTeam.id) {
+        if (lockedTeam) {
+          onClose();
+        } else {
+          sendMessage('ENABLE_STEAL');
+        }
+      }
     }
-  }, [lastMessage, teams, timeLimit]);
+  }, [lastMessage, teams, timeLimit, currentTeam, lockedTeam, question.value, onAwardPoints, onClose, sendMessage]);
 
   const handleSteal = () => {
     sendMessage('ENABLE_STEAL');

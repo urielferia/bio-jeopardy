@@ -1,6 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 
-const MobileDashboard = ({ team, teams, config, activeQuestion, stealable, sendMessage, isMyTurn }) => {
+const MobileDashboard = ({ team, teams, config, activeQuestion, stealable, sendMessage, isMyTurn, isAnswering }) => {
 
   const handleSelect = (catIndex, qIndex) => {
     // A mobile team can select a question if none is active
@@ -53,10 +53,42 @@ const MobileDashboard = ({ team, teams, config, activeQuestion, stealable, sendM
           </div>
         )}
 
-        {activeQuestion && !stealable && (
+        {activeQuestion && !stealable && !isAnswering && (
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
             <h1 style={{ fontSize: '2rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>Question Active</h1>
             <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>Look at the Game Master screen!</p>
+          </div>
+        )}
+
+        {activeQuestion && !stealable && isAnswering && (
+          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem', overflowY: 'auto' }}>
+            <h2 style={{ fontSize: '1.5rem', textAlign: 'center', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
+              {activeQuestion.question?.text || 'Answer the question!'}
+            </h2>
+            {activeQuestion.question?.options && activeQuestion.question.options.some(opt => opt && opt.trim() !== '') ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', width: '100%', maxWidth: '400px' }}>
+                {activeQuestion.question.options.map((opt, i) => {
+                  if (!opt || !opt.trim()) return null;
+                  return (
+                    <button 
+                      key={i} 
+                      onClick={() => sendMessage('SUBMIT_ANSWER', { catIndex: activeQuestion.catIndex, qIndex: activeQuestion.qIndex, answer: opt })}
+                      style={{ padding: '1rem', fontSize: '1.2rem', background: 'var(--card-bg)', color: 'var(--text-primary)', border: '2px solid var(--accent)', borderRadius: '8px', cursor: 'pointer', textAlign: 'left' }}
+                    >
+                      <strong style={{ color: 'var(--accent)', marginRight: '10px' }}>{String.fromCharCode(65 + i)}.</strong> {opt}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                 <p style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>Type your answer below:</p>
+                 <form onSubmit={(e) => { e.preventDefault(); sendMessage('SUBMIT_ANSWER', { catIndex: activeQuestion.catIndex, qIndex: activeQuestion.qIndex, answer: e.target.answer.value }); }}>
+                    <input name="answer" type="text" placeholder="Your answer..." style={{ width: '100%', padding: '1rem', fontSize: '1.2rem', borderRadius: '8px', border: '2px solid var(--accent)', marginBottom: '1rem', background: '#ffffff', color: '#000000' }} />
+                    <button type="submit" style={{ width: '100%', padding: '1rem', fontSize: '1.2rem', background: 'var(--accent)', color: 'white', borderRadius: '8px', fontWeight: 'bold' }}>Submit Answer</button>
+                 </form>
+              </div>
+            )}
           </div>
         )}
 

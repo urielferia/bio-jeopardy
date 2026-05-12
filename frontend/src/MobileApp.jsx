@@ -13,6 +13,7 @@ const MobileApp = () => {
   const [stealable, setStealable] = useState(false);
   const [teamOrder, setTeamOrder] = useState([]);
   const [currentTurnIndex, setCurrentTurnIndex] = useState(0);
+  const [stealerTeamId, setStealerTeamId] = useState(null);
 
   useEffect(() => {
     if (isConnected) {
@@ -49,12 +50,19 @@ const MobileApp = () => {
         setCurrentTurnIndex(lastMessage.currentTurnIndex || 0);
         break;
       case 'QUESTION_OPENED':
-        setActiveQuestion({ catIndex: lastMessage.catIndex, qIndex: lastMessage.qIndex });
+        setActiveQuestion({ 
+          catIndex: lastMessage.catIndex, 
+          qIndex: lastMessage.qIndex,
+          question: lastMessage.question,
+          value: lastMessage.value
+        });
         setStealable(false);
+        setStealerTeamId(null);
         break;
       case 'QUESTION_CLOSED':
         setActiveQuestion(null);
         setStealable(false);
+        setStealerTeamId(null);
         if (lastMessage.currentTurnIndex !== undefined) {
           setCurrentTurnIndex(lastMessage.currentTurnIndex);
         }
@@ -84,6 +92,7 @@ const MobileApp = () => {
         break;
       case 'STEAL_SUCCESS':
         setStealable(false); // Someone got it, hide button
+        setStealerTeamId(lastMessage.teamId);
         break;
       case 'ERROR':
         if (lastMessage.message.includes("Team not found")) {
@@ -132,6 +141,7 @@ const MobileApp = () => {
       stealable={stealable}
       sendMessage={sendMessage}
       isMyTurn={teamOrder.length > 0 ? teamOrder[currentTurnIndex] === teamState.id : true}
+      isAnswering={(teamOrder.length > 0 && teamOrder[currentTurnIndex] === teamState.id && !stealerTeamId) || stealerTeamId === teamState.id}
     />
   );
 };

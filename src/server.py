@@ -222,11 +222,42 @@ async def websocket_endpoint(websocket: WebSocket):
                         })
                     # Tell everyone it's opened so mobiles can hide the board
                     state.stealable = False
+                    question_data = state.config["categories"][msg.get("catIndex")]["questions"][msg.get("qIndex")]
+                    safe_q = {
+                        "text": question_data.get("text"),
+                        "type": question_data.get("type"),
+                        "mediaUrl": question_data.get("mediaUrl"),
+                        "options": question_data.get("options")
+                    }
                     await broadcast({
                         "type": "QUESTION_OPENED",
                         "catIndex": msg.get("catIndex"),
-                        "qIndex": msg.get("qIndex")
+                        "qIndex": msg.get("qIndex"),
+                        "question": safe_q,
+                        "value": q_value
                     })
+
+            elif type == "SUBMIT_ANSWER":
+                t_id = state.mobile_clients.get(websocket)
+                cat_idx = msg.get("catIndex")
+                q_idx = msg.get("qIndex")
+                submitted_answer = msg.get("answer")
+                
+                if state.config and cat_idx is not None and q_idx is not None:
+                    correct_answer = state.config["categories"][cat_idx]["questions"][q_idx].get("answer")
+                    # If it's a valid multiple choice option or matches text
+                    if correct_answer and submitted_answer.strip().lower() == correct_answer.strip().lower():
+                        if state.host_ws:
+                            await state.host_ws.send_json({
+                                "type": "ANSWER_CORRECT",
+                                "teamId": t_id
+                            })
+                    else:
+                        if state.host_ws:
+                            await state.host_ws.send_json({
+                                "type": "ANSWER_INCORRECT",
+                                "teamId": t_id
+                            })
 
             elif type == "ACTIVATE_ITEM":
                 t_id = state.mobile_clients.get(websocket)
