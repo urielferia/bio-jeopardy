@@ -17,7 +17,7 @@ if phase == "setup":
     
     col1, col2 = st.columns([2, 1])
     with col1:
-        game_title = st.text_input("Game Title", "MATERIALES NATURALES")
+        game_title = st.text_input("Game Title", "")
         time_limit = st.number_input("Time to Answer (Seconds)", min_value=5, value=30)
         
         st.subheader("Categories")
@@ -73,7 +73,7 @@ elif phase == "playing":
     active_question = state_manager.get_state("active_question")
     active_effects = state_manager.get_active_effects()
     
-    st.title(config.get("gameTitle", "MATERIALES NATURALES"))
+    st.title(config.get("gameTitle", "BIO JEOPARDY"))
     
     if active_effects:
         for eff in active_effects:

@@ -99,7 +99,7 @@ const GameBoard = ({ config, teams, activeEffects, lastMessage, sendMessage }) =
       {/* Header */}
       <div style={{ textAlign: 'center', margin: '0.5rem 0 1.5rem 0' }}>
         <h1 style={{ fontSize: '2.5rem', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '2px', margin: 0 }}>
-          {config.gameTitle || 'MATERIALES NATURALES'}
+          {config.gameTitle || 'BIO JEOPARDY'}
         </h1>
         <button 
           onClick={() => {

@@ -1,11 +1,11 @@
 import streamlit as st
 import state_manager
 
-st.set_page_config(page_title="Materiales Naturales", page_icon="🎮", layout="wide")
+st.set_page_config(page_title="Bio Jeopardy", page_icon="🎮", layout="wide")
 
 state_manager.init_db()
 
-st.title("MATERIALES NATURALES")
+st.title("BIO JEOPARDY")
 st.write("Select your role from the sidebar to continue.")
 
 st.markdown("""

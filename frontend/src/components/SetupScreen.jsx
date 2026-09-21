@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Plus, Trash2, Play, XCircle, Upload } from 'lucide-react';
 
 const SetupScreen = ({ onStart, connectedTeams = [], onRemoveTeam }) => {
-  const [gameTitle, setGameTitle] = useState('MATERIALES NATURALES');
+  const [gameTitle, setGameTitle] = useState('');
   const [timeLimit, setTimeLimit] = useState(30);
   
   // Default to 3 columns, 3 rows for a quick setup
