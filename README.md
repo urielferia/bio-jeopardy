@@ -45,7 +45,7 @@ Bio-Jeopardy is a dynamic game application designed to host and play a Jeopardy-
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/purpl/bio-jeopardy.git # Replace with actual repo URL if known](https://github.com/urielferia/bio-jeopardy)
+    git clone https://github.com/urielferia/bio-jeopardy
     cd bio-jeopardy
     ```
 
